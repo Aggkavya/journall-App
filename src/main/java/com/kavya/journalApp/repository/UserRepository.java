@@ -1,0 +1,10 @@
+package com.kavya.journalApp.repository;
+
+
+import com.kavya.journalApp.entity.User;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface UserRepository extends MongoRepository<User, ObjectId> {
+    User findByUserName(String userName);
+}
