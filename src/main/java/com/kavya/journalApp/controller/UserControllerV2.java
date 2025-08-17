@@ -1,41 +1,47 @@
 package com.kavya.journalApp.controller;
 
-import com.kavya.journalApp.entity.JournalEntry;
 import com.kavya.journalApp.entity.User;
-import com.kavya.journalApp.services.JournalEntryService;
+import com.kavya.journalApp.repository.UserRepository;
 import com.kavya.journalApp.services.UserService;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-
 @RestController
-@RequestMapping("/user" )
+@RequestMapping("/user")
 public class UserControllerV2 {
-
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
-    @GetMapping
-    public List<User> getAllUser(){
-       return userService.getAllEntry();
-    }
-    @PostMapping
-    public void addNewUser(@RequestBody User newUser){
-        userService.saveEntry(newUser);
-    }
-    @PutMapping("/{userName}")
-    public ResponseEntity<User> updateUser(@RequestBody User user , @PathVariable String userName){
-        User userInDB = userService.findUser(userName);
-        if(userInDB != null){
-            userInDB.setUserName(user.getUserName());
-            userInDB.setPassword(user.getPassword());
-            userService.saveEntry(userInDB);
+
+    @PutMapping
+    public ResponseEntity<Void> updateUser(@RequestBody User user){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userName = auth.getName();
+
+        User inDB = userService.findUser(userName);
+        if (inDB == null) return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        // allow changing username + password (password will be re-encoded in service)
+        if (user.getUserName() != null && !user.getUserName().isBlank()) {
+            inDB.setUserName(user.getUserName());
         }
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            inDB.setPassword(user.getPassword());
+        }
+        userService.saveEntry(inDB);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(){
+        Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        userRepository.deleteUserByUserName(auth.getName());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
