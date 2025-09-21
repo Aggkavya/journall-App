@@ -2,7 +2,10 @@ package com.kavya.journalApp.services;
 
 import com.kavya.journalApp.entity.User;
 import com.kavya.journalApp.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+
 @Service
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -22,15 +27,20 @@ public class UserService {
     }
 
     public void saveEntry(User user) {
-        // encode if not already BCrypt (startsWith $2)
-        String pwd = user.getPassword();
-        if (pwd != null && !pwd.startsWith("$2")) {
-            user.setPassword(encoder.encode(pwd));
+        try {
+            String pwd = user.getPassword();
+            if (pwd != null && !pwd.startsWith("$2")) {
+                user.setPassword(encoder.encode(pwd));
+            }
+            if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                user.setRoles(Arrays.asList("USER")); // Spring adds ROLE_ automatically via .roles()
+            }
+            userRepository.save(user);
         }
-        if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            user.setRoles(Arrays.asList("USER")); // Spring adds ROLE_ automatically via .roles()
+        catch (Exception e){
+            log.error("hahahahaha {}", user.getUserName(), e);
         }
-        userRepository.save(user);
+
     }
     public void saveExisting(User user){
         userRepository.save(user);

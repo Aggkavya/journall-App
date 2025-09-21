@@ -62,6 +62,7 @@ public class JournalEntryService {
                 journalEntryRepository.deleteById(id);}
 
         } catch (Exception e) {
+
             throw new RuntimeException("entry not found" ,e);
         }
 
